@@ -1,21 +1,36 @@
-import { useState, ChangeEvent, FormEvent, Dispatch } from "react"
+import { useState, ChangeEvent, FormEvent, Dispatch, useEffect } from "react"
+import { v4 as uuidv4 } from 'uuid'
+
 import { categories } from "../data/categories"
 import { Activity } from '../types'
-import { ActivityActions } from "../reducers/activity-reducer"
+import { ActivityActions, ActivityState } from "../reducers/activity-reducer"
 
 type FormProps = {
-  dispatch: Dispatch<ActivityActions>
+  dispatch: Dispatch<ActivityActions>,
+  state: ActivityState
 }
 
 const initialActivity: Activity = {
+  id: uuidv4(),
   category: 1,
   name: '',
   calories: 0,
 }
 
-export default function Form( {dispatch}: FormProps ){
+export default function Form( {dispatch, state}: FormProps ){
 
   const [activity, setActivity] = useState<Activity>(initialActivity)
+
+  useEffect(()=>{
+    if(state.activeId){
+      const [selectedActivity] = state.activities.filter(
+        stateActivity => stateActivity.id === state.activeId
+      )
+     setActivity(
+      selectedActivity
+     ) 
+    }
+  },[state.activeId])
 
   type EventForm = ChangeEvent<HTMLSelectElement> | ChangeEvent<HTMLInputElement>
 
@@ -34,9 +49,13 @@ export default function Form( {dispatch}: FormProps ){
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     dispatch({ type: 'save-activity', payload: { newActivity: activity } });
-    console.log('submit', activity);
-    setActivity(initialActivity)
+    
+    setActivity({
+      ...initialActivity,
+      id: uuidv4(),
+    })
   }
 
   return(
@@ -89,6 +108,7 @@ export default function Form( {dispatch}: FormProps ){
 
       <div className="grid grid-cols-1 gap-3">
         <input 
+          type="submit"
           className="bg-black text-white text-center font-bold uppercase py-2 rounded-lg transition-opacity duration-300 cursor-pointer hover:bg-slate-900 
           disabled:opacity-10 disabled:cursor-not-allowed disabled:transition-opacity disabled:duration-300"  
           value={activity.category === 1 ? 'Agregar Comida' : 'Agregar Actividad'}
